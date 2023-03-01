@@ -1,0 +1,10 @@
+    data r0,0x14
+    data r1,3
+    data r2,0
+    data r3,0x01
+comparador:
+    cmp r0,r1
+    jae linha1
+    jmp linha2
+linha1:
+    not r1,r1

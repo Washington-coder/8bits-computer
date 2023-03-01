@@ -1,0 +1,40 @@
+Aluno: Washington Antonio Moreno Riega - 22152254
+
+DATA R0 (0a)
+DATA R1 (05)
+DATA R3 (02)
+
+NOT R1 R1
+ADD R3 R1
+ADD R1 R0
+
+DATA R2 (00)
+DATA R3 (00)
+
+CLF
+JMP R3 R0
+JMPA 19
+
+DATA R3 (O1)
+
+ADD R3 R2
+
+DATA R3 (00)
+
+ADD R1 R0
+JMP 0e
+
+DATA R3 (FF)
+
+ADD R3 R1
+NOT R1 R1
+ADD R1 R0
+
+DATA R1 (28)
+
+ST R1 R2
+
+DATA R1 (29)
+
+ST R1 R0
+JMP 24
