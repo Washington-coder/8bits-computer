@@ -162,7 +162,35 @@ def get_jmp_type_hex_code(byteCode, params, instruction):
     byteCodeIndex += 1
     byteCode[byteCodeIndex] = get_valid_hex_value(params)
     byteCodeIndex += 1
-
+    
+def get_in_out_type_hex_code(byteCode, params, instruction):
+    
+    global byteCodeIndex
+    binaryCode = instructions[instruction]
+    
+    if (instruction == "in"):
+        binaryCode += '0'
+    else:
+        binaryCode += '1'
+        
+    params = params.split(',')
+    
+    instructionType = params[0]
+    register = params[1]
+    
+    if instructionType == "data":
+        binaryCode += "0"
+    elif instructionType == "addr":
+        binaryCode += "1"
+    else:
+        exit("Invalid type for instruction at line " + str(lineNumber))
+        
+    if (has_register(register)):
+        binaryCode += registers[register]
+        
+    hexCode = binary_to_hex(binaryCode)
+    byteCode[byteCodeIndex] = hexCode
+    byteCodeIndex += 1
 
 def get_hex_code(byteCode, instruction, params):
     global byteCodeIndex
@@ -172,6 +200,8 @@ def get_hex_code(byteCode, instruction, params):
     if (has_instruction(instruction)):
         if (instruction == "data"):
             get_data_type_hex_code(byteCode, params)
+        elif (instruction == "in" or instruction == "out"):
+            get_in_out_type_hex_code(byteCode, params, instruction)
         elif (
                 instruction == "add" or
                 instruction == "shr" or

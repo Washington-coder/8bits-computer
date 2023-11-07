@@ -1,5 +1,5 @@
 data r2, 0f
-out addr, r2 
-in data, r3
-xor r2, r2
+OuT  addr, r2 
+iN           daTa, R3
+xor r2, R2
 out addr, r2
