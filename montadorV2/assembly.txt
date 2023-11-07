@@ -1,35 +1,5 @@
-    data r0,0x14
-    data r1,3
-    data r2,0
-    data r3,0x01
-comparador:
-    cmp r0,r1 # exemplo de comentário
-    jae linha1
-    jmp linha2
-linha1: 
-    not r1,r1
-    add r3,r1
-    add r1,r0
-    not r1,r1
-    add r3,r1
-    add r3,r2
-    jmp comparador
-linha2:
-    data r1,0x28
-    st r1,r2
-    data r1,0x29
-    st r1,r0
-    data r3,matrix
-    data r0,0x80
-    out addr,r0  # seleciona monitor .
-    out data,r2 # escreve um ascii no monitor.
-    data r0,0x81
-    out addr,r0 # seleciona teclado.
-    in data,r1 # recebe dado ascii do teclado.
-    in addr,r2 # recebe um endereço pelo barramento
-    move r2,r1 # pseoudo instrução
-    halt
-matrix:
-    .word 0xff
-    .word 1
-    .word -2
+data r2, 0f
+out addr, r2 
+in data, r3
+xor r2, r2
+out addr, r2

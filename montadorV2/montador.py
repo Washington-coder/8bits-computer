@@ -1,337 +1,303 @@
-import sys
-
 # ALUNO: WASHINGTON ANTONIO MORENO RIEGA
 # MATRICULA: 22152254
 
-instrucoes = {
-    'add': '1000', 'shr': '1010',
-    'shl': '1001', 'not': '1011',
-    'and': '1100', 'or': '1101',
-    'xor': '1110', 'cmp': '1111',
-    'ld': '0000', 'st': '0001',
-    'data': '001000',
-    'jmp': '01000000', 'jcaez': '01010111',
-    'jae': '01010110','clf': '01100000',
-    'halt': '01000000', 'in': '0111',
-    'out': '0111'
+import sys
+
+byteCodeIndex = 0
+lineNumber = 1
+
+registers = {
+    'r0': '00', 'r1': '01', 'r2': '10', 'r3': '11'
 }
 
-registradores = {
-    'r0': '00', 'r1': '01', 'r2': '10', 'r3': '11',
+instructions = {
+    "in": "0111",
+    "out": "0111",
+    "add": "1000",
+    "shr": "1001",
+    "shl": "1010",
+    "not": "1011",
+    "and": "1100",
+    "or": "1101",
+    "xor": "1110",
+    "cmp": "1111",
+    "ld": "0000",
+    "st": "0001",
+    "data": "001000",
+    "jmpr": "001100",
+    "jmp": "01000000",
+    "jcaez": "0101",
+    "clf": "01100000",
+    "halt": "",
+    "move": ""
 }
 
-labels = {}
 
-def separar_instrucao_de_parametro(linha):
-    linha = linha.split()
-    return linha
+def get_program_size(asmCode):
+    programSize = 0
+    for line in asmCode:
+        line = line.strip()
+        if not line.startswith('.') and len(line) > 0:
+            if (line.find(';') != -1):
+                line = line.split(';')[0]
+            if (len(line) > 0):
+                instruction, params = separate_params_from_instructions(
+                    line)
+                instruction = instruction.lower()
+                if (
+                    instruction == "add" or
+                    instruction == "shr" or
+                    instruction == "shl" or
+                    instruction == "not" or
+                    instruction == "and" or
+                    instruction == "or" or
+                    instruction == "xor" or
+                    instruction == "cmp" or
+                    instruction == "ld" or
+                    instruction == "st" or
+                    instruction == "jmpr" or
+                    instruction == "clf" or
+                    instruction == "in" or
+                    instruction == "out"
+                ):
+                    programSize += 1
+                elif (
+                    instruction == "jmp" or
+                    instruction == "halt" or
+                    instruction == "data" or
+                    instruction[0] == "j"
+                ):
+                    programSize += 2
+                elif (
+                    instruction == "move"
+                ):
+                    programSize += 3
+    return programSize
+                    
+def separate_params_from_instructions(line):
+    line = line.split()
+    if (len(line) > 1):
+        if len(line) == 3:
+            line[1] = line[1] + line[2]
+        return line[0], line[1]
+    return line[0], ''
 
-def preenche_endereco_labels(codigoAssembly):
-    addr = 0
-    for linha in codigoAssembly:
-        linhaAssembly = separar_instrucao_de_parametro(linha)
-        tipoDeInstrucao = linhaAssembly[0]
 
-        if (tipoDeInstrucao.find(':') != -1):
-            label = linhaAssembly[0].split(':')
-            labels.update({label[0]:hex(addr)})
-        elif (tipoDeInstrucao == 'jmp'):
-            addr += 2
-        elif (tipoDeInstrucao == 'jae'):
-            addr += 2
-        elif (tipoDeInstrucao == 'halt'):
-            addr += 2
-        elif (tipoDeInstrucao == 'data'):
-            addr += 2
-        elif (tipoDeInstrucao == 'st'):
-            addr += 1
-        elif (tipoDeInstrucao == 'add'):
-            addr += 1
-        elif (tipoDeInstrucao == 'shl'):
-            addr += 1
-        elif (tipoDeInstrucao == 'shr'):
-            addr += 1
-        elif (tipoDeInstrucao == 'not'):
-            addr += 1
-        elif (tipoDeInstrucao == 'and'):
-            addr += 1
-        elif (tipoDeInstrucao == 'or'):
-            addr += 1
-        elif (tipoDeInstrucao == 'xor'):
-            addr += 1
-        elif (tipoDeInstrucao == 'cmp'):
-            addr += 1
-        elif (tipoDeInstrucao == 'move'):
-            addr += 2
-        elif (tipoDeInstrucao == 'in'):
-            addr += 1
-        elif (tipoDeInstrucao == 'out'):
-            addr += 1
-        elif (tipoDeInstrucao == 'clf'):
-            addr += 1
-        elif (tipoDeInstrucao == 'ld'):
-            addr += 1
-        elif (tipoDeInstrucao == 'st'):
-            addr += 1
+def binary_to_hex(binaryCode):
+    hexCode = hex(int(binaryCode, 2)).split('x')
+    hexCode = hexCode[1]
+    return hexCode
 
-def busca_endereco(endereco):
-    byte = ''
-    if (endereco.find('x') != -1):
-        endereco = endereco.split('x')
-        byte = endereco[1]
+
+def has_register(register):
+    if register in registers:
+        return True
     else:
-        if endereco in labels:
-            byte = labels[endereco]
-            byte = byte.split('x')
-            byte = byte[1]
-            if len(str(byte)) == 1:
-                byte = '0' + str(byte)
-        else:
-            exit('Não existe esse label: ' + str(endereco))
-    return byte
+        exit("Unknown register at line: " + str(lineNumber))
 
-def insere_tipo_J(endereco, nomeDaInstrucao, indexCodigoHexa, codigoHexa):
-    byte1 = split_hexa(hex(int(instrucoes[nomeDaInstrucao],2)))
-    byte2 = busca_endereco(endereco)
-    codigoHexa[indexCodigoHexa] = byte1
-    indexCodigoHexa += 1
-    codigoHexa[indexCodigoHexa] = byte2
-    indexCodigoHexa += 1
 
-def split_hexa(hexa):
-    hexa = hexa.split('x')
-    hexa = hexa[1]
-    return hexa
-
-def split_parametros(parametros):
-    parametros = parametros.split(',')
-    return parametros
-
-def complemento_de_2(valor):
-    separados = valor.split('-')
-    num = int(separados[1])
-    num2 = ~num ^ 0b11111111
-    return hex(num2 * -1)
-
-def insere_tipo_Data(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa):
-    byte1 = instrucoes[nomeDaInstrucao]
-    registrador = parametros[0]
-    valor = parametros[1]
-
-    if valor.find('-') != -1:
-        valor = complemento_de_2(valor)
-    
-    # Valida tanto o uso de registradores quanto o de enderecos
-    if registrador in registradores:
-        registrador = registradores[registrador]
+def has_instruction(instruction):
+    if instruction in instructions:
+        return True
+    elif (instruction[0] == 'j'):
+        return True
     else:
-        exit('Registrador não existe')
-    
-    # Valida uso de valores em hexa
-    if valor in labels:
-        valor = split_hexa(labels[valor])
-    elif valor.find('x') != -1:
-        valor = split_hexa(valor)
+        exit("Unknown instruction at line: " + str(lineNumber))
+
+
+def get_valid_hex_value(value):
+    if (value.find('x') != -1):
+        value = value.split('x')[1]
+        if len(value) == 0 or len(value) > 2:
+            exit("Invalid hex value at line: " + str(lineNumber))
+        if (len(value) == 1):
+            return '0' + value
+        return value
+    elif (len(value) == 0 or len(value) > 2):
+        exit("Invalid hex value at line: " + str(lineNumber))
     else:
-        valor = split_hexa(hex(int(valor)))
+        if (len(value) == 1):
+            return '0' + value
+        return value
 
-    if len(str(valor)) == 1:
-        valor = '0' + str(valor)
 
-    byte1 = str(byte1) + str(registrador)
-    byte1 = split_hexa(hex(int(byte1,2)))
-    byte2 = valor
+def get_data_type_hex_code(byteCode, params):
+    global byteCodeIndex
+    params = params.split(",")
 
-    codigoHexa[indexCodigoHexa] = byte1
-    indexCodigoHexa += 1
-    codigoHexa[indexCodigoHexa] = byte2
-    indexCodigoHexa += 1
+    if has_register(params[0]):
+        register = params[0]
+        value = params[1]
+        binaryCode = instructions["data"] + registers[register]
+        hexCode = binary_to_hex(binaryCode)
+        byteCode[byteCodeIndex] = hexCode
+        byteCodeIndex += 1
+        byteCode[byteCodeIndex] = get_valid_hex_value(value)
+        byteCodeIndex += 1
 
-def split_binary(binary):
-    binary = binary.split('b')
-    binary = binary[1]
-    return binary
 
-def passa_registradores_binario(parametros):
-    registrador1 = registradores[parametros[0]]
-    registrador2 = registradores[parametros[1]]
+def get_two_registers_instruction(byteCode, params, instruction):
+    global byteCodeIndex
+    register1 = params[0]
+    register2 = params[1]
 
-    registradoresBin = str(registrador1) + str(registrador2)
-    return registradoresBin
+    if (has_register(register1) and has_register(register2)):
+        binaryCode = instructions[instruction] + \
+            registers[register1] + registers[register2]
+        hexCode = binary_to_hex(binaryCode)
 
-def insere_tipo_St(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa):
-    
-    registradoresBin= passa_registradores_binario(parametros)
+        if (len(hexCode) == 1):
+            hexCode = '0' + hexCode
 
-    byte = instrucoes[nomeDaInstrucao] + registradoresBin
-    byte = split_hexa(hex(int(byte, 2)))
-    codigoHexa[indexCodigoHexa] = byte
-    
-def insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa):
-    
-    registradoresBin = passa_registradores_binario(parametros)
+        byteCode[byteCodeIndex] = hexCode
+        byteCodeIndex += 1
 
-    byte = instrucoes[nomeDaInstrucao] + registradoresBin
-    byte = split_hexa(hex(int(byte, 2)))
-    codigoHexa[indexCodigoHexa] = byte
-    
-def escrever_no_arquivo(memory_file, codigoHexa):
+
+def get_jmp_type_hex_code(byteCode, params, instruction):
+    global byteCodeIndex
+
+    binaryCode = instructions[instruction]
+    hexCode = binary_to_hex(binaryCode)
+    byteCode[byteCodeIndex] = hexCode
+    byteCodeIndex += 1
+    byteCode[byteCodeIndex] = get_valid_hex_value(params)
+    byteCodeIndex += 1
+
+
+def get_hex_code(byteCode, instruction, params):
+    global byteCodeIndex
+    instruction = instruction.lower()
+    params = params.lower()
+
+    if (has_instruction(instruction)):
+        if (instruction == "data"):
+            get_data_type_hex_code(byteCode, params)
+        elif (
+                instruction == "add" or
+                instruction == "shr" or
+                instruction == "shl" or
+                instruction == "not" or
+                instruction == "and" or
+                instruction == "or" or
+                instruction == "xor" or
+                instruction == "cmp" or
+                instruction == "ld" or
+                instruction == "st"
+        ):
+            params = params.split(",")
+            get_two_registers_instruction(byteCode, params, instruction)
+        elif (instruction == "clf"):
+            hexCode = binary_to_hex(instructions[instruction])
+            byteCode[byteCodeIndex] = hexCode
+            byteCodeIndex += 1
+        elif (instruction == "halt"):
+            addr = str(hex(byteCodeIndex))
+            get_jmp_type_hex_code(byteCode, addr, "jmp")
+        elif (instruction == "move"):
+            params = params.split(",")
+            register1 = params[0]
+            register2 = params[1]
+            params[0] = register2
+            params[1] = register2
+            get_two_registers_instruction(byteCode, params, "xor")
+            params[0] = register1
+            params[1] = register2
+            get_two_registers_instruction(byteCode, params, "add")
+            params[0] = register1
+            params[1] = register1
+            get_two_registers_instruction(byteCode, params, "xor")
+        elif (instruction[0] == 'j'):
+            if (instruction == "jmpr"):
+                register = params
+                if (has_register(register)):
+                    binaryCode = instructions[instruction] + \
+                        registers[register]
+                    hexCode = binary_to_hex(binaryCode)
+                    byteCode[byteCodeIndex] = hexCode
+                    byteCodeIndex += 1
+            elif (instruction == "jmp"):
+                get_jmp_type_hex_code(byteCode, params, instruction)
+            else:
+                if (len(instruction) > 5 or len(instruction) <= 1):
+                    exit("Unknown instruction at line: " + str(lineNumber))
+
+                binaryCode = instructions['jcaez']
+                caezParam = ['0', '0', '0', '0']
+
+                for item in range(1, len(instruction)):
+                    if (instruction[item] == 'c'):
+                        caezParam[0] = '1'
+                    elif (instruction[item] == 'a'):
+                        caezParam[1] = '1'
+                    elif (instruction[item] == 'e'):
+                        caezParam[2] = '1'
+                    elif (instruction[item] == 'z'):
+                        caezParam[3] = '1'
+                    else:
+                        exit("Unknown instruction at line: " + str(lineNumber))
+
+                caezParam = "".join(caezParam)
+                binaryCode += caezParam
+                hexCode = binary_to_hex(binaryCode)
+                byteCode[byteCodeIndex] = hexCode
+                byteCodeIndex += 1
+                byteCode[byteCodeIndex] = get_valid_hex_value(params)
+                byteCodeIndex += 1
+
+
+def get_byte_code(asm_file):
+    byteCode = ['00' for i in range(256)]
+    global lineNumber
+
+    with open(asm_file, 'r') as file:
+        asmCode = file.readlines()
+        programSize = get_program_size(asmCode)
+        for line in asmCode:
+            line = line.strip()
+            if line.startswith('.word') and len(line) > 0:
+                if (line.find(';') != -1):
+                    line = line.split(';')[0]
+                if (len(line) > 0):
+                    instruction, params = separate_params_from_instructions(
+                        line)
+                    byteCode[programSize] = get_valid_hex_value(params)           
+                    programSize += 1
+
+        for line in asmCode:
+            line = line.strip()
+            if not line.startswith('.') and len(line) > 0:
+                if (line.find(';') != -1):
+                    line = line.split(';')[0]
+                if (len(line) > 0):
+                    instruction, params = separate_params_from_instructions(
+                        line)
+                    get_hex_code(byteCode, instruction, params)
+                    lineNumber += 1
+
+    return byteCode
+
+
+def write_in_memory_file(memory_file, byteCode):
     with open(memory_file, 'w') as f:
         f.write('v3.0 hex words plain\n')
-        x = 0
-        while x <= 255:
-            if (x+1)%16 != 0:
-                f.write(codigoHexa[x]+" ")
+        i = 0
+        while i <= 255:
+            if (i+1) % 16 != 0:
+                f.write(byteCode[i]+" ")
             else:
-                f.write(codigoHexa[x])
-            if ((x+1)%16 == 0) & (x != 255):
+                f.write(byteCode[i])
+            if ((i+1) % 16 == 0) & (i != 255):
                 f.write('\n')
-            x += 1
+            i += 1
 
-def insere_tipo_move(parametros, indexCodigoHexa, codigoHexa):
-    registrador1 = parametros[0]
-    registrador2 = parametros[1]
-
-    parametrosXor = []
-
-    parametrosXor.append(registrador2)
-    parametrosXor.append(registrador2)
-
-    insere_tipo_aritimetico_ou_logico(parametrosXor, 'xor', indexCodigoHexa, codigoHexa)
-    indexCodigoHexa += 1
-
-    parametrosAdd = []
-
-    parametrosAdd.append(registrador1)
-    parametrosAdd.append(registrador2)
-
-    insere_tipo_aritimetico_ou_logico(parametrosAdd, 'add', indexCodigoHexa, codigoHexa)
-    indexCodigoHexa += 1
-
-def insere_tipo_in_out(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa):
-    tipo = parametros[0]
-    registrador = parametros[1]
-
-    binario = instrucoes[nomeDaInstrucao]
-    if (nomeDaInstrucao == 'in'):
-        binario = str(binario) + '0'
-    elif(nomeDaInstrucao == 'out'):
-        binario = str(binario) + '1'
-
-    if (tipo == 'addr'):
-        binario = str(binario) + '1'
-    elif (tipo == 'data'):
-        binario = str(binario) + '0'
-
-    registradorBinario = registradores[registrador]
-
-    binario = binario + registradorBinario
-    byte = split_hexa(hex(int(binario, 2)))
-
-    codigoHexa[indexCodigoHexa] = byte
-    indexCodigoHexa += 1    
-
-
-# main
-def passa_arquivo_para_hexa(memory_file):
-
-    codigoHexa = ['00' for i in range(256)]
-    indexCodigoHexa = 0
-    
-    with open(memory_file, "r") as arquivo:
-        codigoAssembly = arquivo.readlines()
-        preenche_endereco_labels(codigoAssembly)
-        for linha in codigoAssembly:
-            linhaAssembly = separar_instrucao_de_parametro(linha)
-            nomeDaInstrucao = linhaAssembly[0]
-            if (nomeDaInstrucao == 'jmp'):
-                endereco = linhaAssembly[1]
-                insere_tipo_J(endereco, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 2    
-            elif (nomeDaInstrucao == 'jae'):
-                endereco = linhaAssembly[1]
-                insere_tipo_J(endereco, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 2    
-            elif (nomeDaInstrucao == 'data'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_Data(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 2 
-            elif (nomeDaInstrucao == 'halt'):
-                codigoHexa[indexCodigoHexa] = split_hexa(hex(int(instrucoes[nomeDaInstrucao],2)))
-                indexCodigoHexa += 1
-                codigoHexa[indexCodigoHexa] = split_hexa(hex(indexCodigoHexa - 1))
-                indexCodigoHexa += 1    
-            elif (nomeDaInstrucao == 'st'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_St(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1    
-            elif (nomeDaInstrucao == 'add'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'not'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'shl'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'shr'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'and'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'or'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'xor'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'cmp'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_aritimetico_ou_logico(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'move'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_move(parametros, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 2
-            elif (nomeDaInstrucao == 'clf'):
-                hexa = split_hexa(hex(int(instrucoes[nomeDaInstrucao],2)))
-                codigoHexa[indexCodigoHexa] = hexa
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == 'in' or nomeDaInstrucao == 'out'):
-                parametros = split_parametros(linhaAssembly[1])
-                insere_tipo_in_out(parametros, nomeDaInstrucao, indexCodigoHexa, codigoHexa)
-                indexCodigoHexa += 1
-            elif (nomeDaInstrucao == '.word'):
-                parametro = linhaAssembly[1]
-                if parametro.find('x') != -1:
-                    parametro = split_hexa(linhaAssembly[1])
-                elif parametro.find('-') != -1:
-                    parametro = split_hexa(complemento_de_2(parametro))
-                else:
-                    parametro = split_hexa(hex(int(parametro)))
-
-                if len(str(parametro)) == 1:
-                    parametro = '0' + parametro
-                
-                codigoHexa[indexCodigoHexa] = parametro
-                indexCodigoHexa += 1
-
-    return codigoHexa
 
 def main(asm_file, memory_file):
-    codigoHexa = passa_arquivo_para_hexa(asm_file)
-    escrever_no_arquivo(memory_file, codigoHexa)
+    byteCode = get_byte_code(asm_file)
+    write_in_memory_file(memory_file, byteCode)
+
 
 if __name__ == '__main__':
-    
-	assert len(sys.argv)==3, 'invalid number of input arguments'
 
-	main(sys.argv[1], sys.argv[2])
+    assert len(sys.argv) == 3, 'invalid number of input arguments'
+
+    main(sys.argv[1], sys.argv[2])
