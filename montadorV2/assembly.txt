@@ -12,12 +12,22 @@
     add r1, r0 ; 0b
     add r0, r3 ; 0c
     ; Guarda numero lido do teclado na memoria
-    data r0, 0x20 ; 0d
-    st r0, r3 ; 0e
-    halt ; 0f
+    data r0, 0x25 ; 0d
+    st r0, r3 ; 0f
+    ; Carregar elementos do vetor no registrador
+    data r0, 1 ; 10
+    data r1, 0x20 ; 12
+    data r2, 0x24 ; 14
+    clf ; 16
+    cmp r1, r2 ; 17
+    ja 0x1e ; 18
+        ld r1, r3 ; 1a
+        add r0, r1 ; 1b
+        jmp 0x16 ; 1c
+    halt ; 1e
 .data
-    .word 1 ; 10
-    .word 2 ; 1
-    .word 3 ; 0c
-    .word 4 ; 0d
-    .word 5 ; 0e
+    .word 1 ; 20
+    .word 2 ; 21
+    .word 3 ; 22
+    .word 4 ; 23
+    .word 5 ; 24
