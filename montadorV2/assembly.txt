@@ -12,25 +12,21 @@
     add r1, r0
     add r0, r3
     ; Guarda numero lido do teclado na memoria
-    data r0, 0x2f
+    data r0, 0x28
     st r0, r3
-    ; Carregar elementos do vetor no registrador
+    ; Carregar elementos do vetor no registrador 3
+    data r1, 0x23
+    data r2, 0x27
     data r0, 1
-    data r1, 0x2a
-    data r2, 0x2e
     clf
     cmp r1, r2
-    ja 0x28
+    ja 0x21
         ld r1, r3
         add r0, r1
-        ; Guarda a posicao atual no vetor
-        data r0, 0x30
+        ; Guarda o endereco da posicao atual na memoria
+        data r0, 0x29 
         st r0, r1
-        data r0, 1
-        data r2, 0x27
-        data r3, 0x30
-        ld r3, r1
-        jmp 0x16
+        jmp 0x12
     halt
 .data
     .word 1
