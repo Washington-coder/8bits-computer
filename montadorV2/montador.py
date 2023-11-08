@@ -196,7 +196,6 @@ def get_hex_code(byteCode, instruction, params):
     global byteCodeIndex
     instruction = instruction.lower()
     params = params.lower()
-
     if (has_instruction(instruction)):
         if (instruction == "data"):
             get_data_type_hex_code(byteCode, params)
@@ -278,6 +277,7 @@ def get_hex_code(byteCode, instruction, params):
 def get_byte_code(asm_file):
     byteCode = ['00' for i in range(256)]
     global lineNumber
+    global byteCodeIndex
 
     with open(asm_file, 'r') as file:
         asmCode = file.readlines()
@@ -293,8 +293,10 @@ def get_byte_code(asm_file):
                     byteCode[programSize] = get_valid_hex_value(params)           
                     programSize += 1
 
+    with open('teste.txt', 'w') as f:
         for line in asmCode:
             line = line.strip()
+            f.write(line + "    ;   " + str(hex(byteCodeIndex)) + "\n")
             if not line.startswith('.') and len(line) > 0:
                 if (line.find(';') != -1):
                     line = line.split(';')[0]
